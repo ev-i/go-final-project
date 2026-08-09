@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/ev-i/go-final-project/pkg/db"
+	"github.com/ev-i/go-final-project/pkg/server"
 )
 
 func main() {
@@ -21,24 +21,9 @@ func main() {
 		log.Fatal("Ошибка инициализации БД: ", err)
 	}
 
-	// Определяем порт или используем порт по умолчанию
-	port := os.Getenv("TODO_PORT")
-	if port == "" {
-		port = "7540"
-	}
-
-	// Указываем директорию с фронтенд-файлами
-	fs := http.FileServer(http.Dir("./web"))
-
-	// Привязываем файловый сервер к корневому пути
-	http.Handle("/", fs)
-
-	log.Printf("Сервер запущен на http://localhost:%s\n", port)
-
-	// Запускаем сервер
-	err = http.ListenAndServe(":"+port, nil)
+	err = server.Run()
 	if err != nil {
-		log.Fatal("Ошибка запуска сервера: ", err)
+		log.Fatal("Ошибка запуска сервера", err)
 	}
 
 }
