@@ -1,12 +1,24 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 )
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func respondWithError(res http.ResponseWriter, message string) {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(res).Encode(ErrorResponse{Error: message})
+}
+
 func Init() {
 	http.HandleFunc("/api/nextdate", nextDayHandler)
+	http.HandleFunc("POST /api/task", addTaskHandler)
 }
 
 func nextDayHandler(res http.ResponseWriter, req *http.Request) {
