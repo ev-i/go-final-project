@@ -8,7 +8,7 @@ import (
 	"github.com/ev-i/go-final-project/pkg/db"
 )
 
-type TaskResp struct {
+type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
@@ -19,7 +19,7 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := TaskResp{Tasks: tasks}
+	response := TasksResp{Tasks: tasks}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
