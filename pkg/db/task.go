@@ -74,3 +74,20 @@ func GetTask(id string) (*Task, error) {
 
 	return &t, nil
 }
+
+func DeleteTask(id string) error {
+
+	query := `DELETE FROM scheduler WHERE id = ?`
+	result, err := db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err // Редкая ошибка, зависит от драйвера БД
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf(`nothing to delete`)
+	}
+	return nil
+}

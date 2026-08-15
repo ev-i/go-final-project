@@ -6,9 +6,89 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/ev-i/go-final-project/pkg/db"
 )
+
+func makeDoneTaskHandler(w http.ResponseWriter, r *http.Request) {
+	// Парсим запрос
+	queryParams := r.URL.Query()
+	id := queryParams.Get("id")
+	if id == "" {
+		respondWithError(w, "id cannot be empty")
+		return
+	}
+	// Достаём задачу из базы
+	task, err := db.GetTask(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, "Задача не найдена")
+			return
+		}
+		respondWithError(w, err.Error())
+		return
+	}
+	// Проверяем является ли задача повторяемой
+	isRepeatable := false
+	if task.Repeat != "" {
+		isRepeatable = true
+	}
+
+	if isRepeatable {
+		nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
+		if err != nil {
+			respondWithError(w, err.Error())
+			return
+		}
+		task.Date = nextDate
+		err = db.UpdateTask(task)
+		if err != nil {
+			respondWithError(w, err.Error())
+			return
+		}
+
+	} else {
+		err = db.DeleteTask(id)
+		if err != nil {
+			respondWithError(w, err.Error())
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(map[string]string{}); err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
+
+func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	id := queryParams.Get("id")
+	if id == "" {
+		respondWithError(w, "id cannot be empty")
+		return
+	}
+
+	err := db.DeleteTask(id)
+	if err != nil {
+		respondWithError(w, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(map[string]string{}); err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
 
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()

@@ -21,4 +21,6 @@ func Init() {
 	http.HandleFunc("GET /api/tasks", tasksHandler)
 	http.HandleFunc("GET /api/task", getTaskHandler)
 	http.HandleFunc("PUT /api/task", putTaskHandler)
+	http.HandleFunc("DELETE /api/task", deleteTaskHandler)
+	http.HandleFunc("POST /api/task/done", makeDoneTaskHandler)
 }
