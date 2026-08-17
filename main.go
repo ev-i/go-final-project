@@ -17,6 +17,8 @@ func main() {
 	}
 
 	err := db.Init(dbFile)
+	defer db.Close()
+
 	if err != nil {
 		log.Fatal("Ошибка инициализации БД: ", err)
 	}

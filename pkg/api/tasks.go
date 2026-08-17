@@ -8,14 +8,16 @@ import (
 	"github.com/ev-i/go-final-project/pkg/db"
 )
 
+const maxRows = 50
+
 type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks, err := db.Tasks(50) // в параметре максимальное количество записей
+	tasks, err := db.Tasks(maxRows) // в параметре максимальное количество записей
 	if err != nil {
-		respondWithError(w, err.Error())
+		respondWithError(w, 500, err.Error())
 		return
 	}
 

@@ -16,16 +16,11 @@ repeat VARCHAR);
 CREATE INDEX idx_scheduler_date ON scheduler(date);
 `
 
-/*
-|id|date|title|comment|repeat|
-|--|----|-----|-------|------|
-d 1
-d 7
-d 60
-y
-*/
-
 var db *sql.DB
+
+func Close() {
+	db.Close()
+}
 
 func Init(dbFile string) error {
 	// 1. Проверяем существование файла

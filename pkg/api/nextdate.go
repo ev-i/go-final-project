@@ -11,12 +11,15 @@ import (
 const layout = "20060102"
 
 func nextDayHandler(res http.ResponseWriter, req *http.Request) {
+	n := time.Now()
 	now := req.FormValue("now")
-	n, err := time.Parse(layout, now)
-	if err != nil {
-		http.Error(res, "Invalid \"now\" format", http.StatusBadRequest)
-		return
-
+	if now != "" {
+		var err error
+		n, err = time.Parse(layout, now)
+		if err != nil {
+			http.Error(res, "Invalid \"now\" format", http.StatusBadRequest)
+			return
+		}
 	}
 	date := req.FormValue("date")
 	if date == "" {
@@ -34,7 +37,7 @@ func nextDayHandler(res http.ResponseWriter, req *http.Request) {
 
 	nextDate, err := NextDate(n, date, repeat)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -80,13 +83,13 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		// fmt.Println("Hello, For-Cycle", "now", now, "dstart: ", dstart, "repeat:", repeat)
 		if s == "y" {
 			date = date.AddDate(1, 0, 0)
-			if afterNow(date, now) {
+			if afterNow(now, date) {
 				break
 			}
 		}
 		if s == "d" {
 			date = date.AddDate(0, 0, d)
-			if afterNow(date, now) {
+			if afterNow(now, date) {
 				break
 			}
 		}
@@ -95,7 +98,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	return date.Format(layout), nil
 }
 
-func afterNow(date, now time.Time) bool {
+func afterNow(now, date time.Time) bool {
 	if date.After(now) {
 		return true
 	}

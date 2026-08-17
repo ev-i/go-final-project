@@ -16,17 +16,17 @@ func makeDoneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	id := queryParams.Get("id")
 	if id == "" {
-		respondWithError(w, "id cannot be empty")
+		respondWithError(w, 400, "id cannot be empty")
 		return
 	}
 	// Достаём задачу из базы
 	task, err := db.GetTask(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			respondWithError(w, "Задача не найдена")
+			respondWithError(w, 404, "Задача не найдена")
 			return
 		}
-		respondWithError(w, err.Error())
+		respondWithError(w, 500, err.Error())
 		return
 	}
 	// Проверяем является ли задача повторяемой
@@ -38,20 +38,20 @@ func makeDoneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if isRepeatable {
 		nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
 		if err != nil {
-			respondWithError(w, err.Error())
+			respondWithError(w, 500, err.Error())
 			return
 		}
 		task.Date = nextDate
 		err = db.UpdateTask(task)
 		if err != nil {
-			respondWithError(w, err.Error())
+			respondWithError(w, 500, err.Error())
 			return
 		}
 
 	} else {
 		err = db.DeleteTask(id)
 		if err != nil {
-			respondWithError(w, err.Error())
+			respondWithError(w, 500, err.Error())
 			return
 		}
 	}
@@ -70,13 +70,17 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	id := queryParams.Get("id")
 	if id == "" {
-		respondWithError(w, "id cannot be empty")
+		respondWithError(w, 400, "id cannot be empty")
 		return
 	}
 
 	err := db.DeleteTask(id)
 	if err != nil {
-		respondWithError(w, err.Error())
+		if errors.Is(err, db.ErrNothingToDelete) {
+			respondWithError(w, 404, err.Error())
+			return
+		}
+		respondWithError(w, 500, err.Error())
 		return
 	}
 
@@ -93,13 +97,17 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	id := queryParams.Get("id")
+	if id == "" {
+		respondWithError(w, 400, "id cannot be empty")
+		return
+	}
 	task, err := db.GetTask(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			respondWithError(w, "Задача не найдена")
+			respondWithError(w, 404, "Задача не найдена")
 			return
 		}
-		respondWithError(w, err.Error())
+		respondWithError(w, 500, err.Error())
 		return
 	}
 
@@ -117,24 +125,27 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	task := db.Task{}
 
-	err := json.NewDecoder(r.Body).Decode(&task)
-
-	if task.Title == "" {
-		respondWithError(w, "Title cannot be empty")
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = checkDate(&task)
+	if task.Title == "" {
+		respondWithError(w, 400, "Title cannot be empty")
+		return
+	}
+
+	err := checkDate(&task)
 
 	if err != nil {
-		respondWithError(w, err.Error())
+		respondWithError(w, 500, err.Error())
 		return
 	}
 
 	err = db.UpdateTask(&task)
 
 	if err != nil {
-		respondWithError(w, err.Error())
+		respondWithError(w, 500, err.Error())
 		return
 	}
 

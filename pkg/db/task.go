@@ -1,6 +1,9 @@
 package db
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Task struct {
 	ID      string `json:"id"`
@@ -9,6 +12,8 @@ type Task struct {
 	Comment string `json:"comment"`
 	Repeat  string `json:"repeat"`
 }
+
+var ErrNothingToDelete = errors.New("nothing to delete")
 
 func AddTask(task *Task) (int64, error) {
 	var id int64
@@ -44,11 +49,12 @@ func UpdateTask(task *Task) error {
 func Tasks(limit int) ([]*Task, error) {
 	tasks := []*Task{}
 
-	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler LIMIT ?", limit)
+	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?", limit)
 
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var t Task
@@ -87,7 +93,7 @@ func DeleteTask(id string) error {
 		return err // Редкая ошибка, зависит от драйвера БД
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf(`nothing to delete`)
+		return ErrNothingToDelete
 	}
 	return nil
 }

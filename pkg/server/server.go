@@ -28,7 +28,7 @@ func Run() error {
 	// Запускаем сервер
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
-		log.Fatal("Ошибка запуска сервера: ", err)
+		log.Println("Ошибка запуска сервера: ", err)
 		return err
 	}
 	return nil

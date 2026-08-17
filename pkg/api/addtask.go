@@ -9,10 +9,11 @@ import (
 	"github.com/ev-i/go-final-project/pkg/db"
 )
 
+type Response struct {
+	ID int `json:"id"`
+}
+
 func addTaskHandler(res http.ResponseWriter, req *http.Request) {
-	type Response struct {
-		ID int `json:"id"`
-	}
 
 	var task db.Task
 
@@ -23,14 +24,14 @@ func addTaskHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if task.Title == "" {
-		respondWithError(res, "Title cannot be empty")
+		respondWithError(res, 400, "Title cannot be empty")
 		return
 	}
 
 	err = checkDate(&task)
 
 	if err != nil {
-		respondWithError(res, err.Error())
+		respondWithError(res, 500, err.Error())
 		return
 	}
 
@@ -65,7 +66,7 @@ func checkDate(task *db.Task) error {
 			return err
 		}
 	}
-	if afterNow(now, t) {
+	if !afterNow(now, t) {
 		if len(task.Repeat) == 0 {
 			// если правила повторения нет, то берём сегодняшнее число
 			task.Date = now.Format(layout)
